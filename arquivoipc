@@ -1,0 +1,5 @@
+
+DATABASE_URL="file:./dev.db"
+
+SECRET_KEY="1c8e772eb872ffcabe5d28073480bc1d825a18856395cae2cf7dd74aef69f4cf"
+PORT=3000
