@@ -7,9 +7,9 @@ class Server {
     private port: number;
     public  key: string;
     constructor() {
-      this.key = process.env.SECRET_KEY ?? '';
+      this.key = String(process.env.SECRET_KEY);
       this.app = express();
-      this.port = process.env.PORT ? Number(process.env.PORT): 0o00;
+      this.port = Number(process.env.PORT);
       this.middlewares();
       this.routes();
       this.run();
@@ -17,22 +17,22 @@ class Server {
     }
   
     
-    private middlewares(): void {
+    private middlewares = (): void =>  {
       this.app.use(json());
     }
   
-    private routes(): void {
-      this.app.use('/api', router);
+    private routes = (): void => {
+      this.app.use('/api', router)
     }
   
-    private run(): void {
+    private run = (): void => {
       this.app.listen(this.port, () => {
-        console.log(`Servidor rodando na porta http://localhost:${this.port}`);
-      });
+        console.log(`Servidor rodando na porta http://localhost:${this.port}`)
+      })
     }
   }
 
 config()
-const server = new Server();
+new Server()
 
-export default server
+

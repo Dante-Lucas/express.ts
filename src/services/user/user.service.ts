@@ -1,23 +1,21 @@
-import { Iuser } from "../../interface/user.interface";
+import { Iuser } from "../../interface/user/user.interface";
 import { Request, Response } from "express";
-import { IsvalidPassword } from "../../utils/validator";
+import { isValidCredencials, IsvalidPassword } from "../../utils/validator";
 import { randomInt } from "crypto";
 import { passwordHash } from "../../utils/hash";
 import { prisma } from "../../database/prisma";
-import { GetPublicKeyOrSecret, Secret, sign, verify } from "jsonwebtoken";
+import { Secret, sign, verify } from "jsonwebtoken";
 
 
 class UserService {
 
-    constructor() {
-        
-    }
+    
     public async cadastro(request: Request, response: Response):Promise<Response> {
         
         const {username, email, password, confirmPassword}:Iuser = request.body
         
-        if(username === '' || email === '' || password === '') {
-            return response.status(400).json({ message: 'Todos os campos devem ser preenchidos!' });
+        if(!isValidCredencials(username,email)) {
+            return response.status(400).json({ message: 'Campos inválidos' });
         }
         if(!IsvalidPassword(password,confirmPassword)) {
             return response.status(400).json({ message: 'As senhas são inválidas' });
@@ -31,12 +29,12 @@ class UserService {
                 email: email,
             }
         })
-        console.log(user)
 
         if (user?.email===email) {
             return response.status(400).json({ message: 'Usuário já existe' });
         } 
-    
+        
+        
         const newuser:Iuser = await prisma.user.create({
             data: {
                 username: username,
@@ -53,43 +51,54 @@ class UserService {
         if(username === '' || password === '') {
             return response.status(400).json({ message: 'Todos os campos devem ser preenchidos!' });
         }
-        
-        const user = await prisma.user.findUnique({
-            where: {
-                username: username
+        try {
+            const user = await prisma.user.findUnique({
+                where: {
+                    username: username
+                }
+            })
+
+            if (!user) {
+                return response.status(400).json({ message: 'Usuário não encontrado' });
             }
-        })
+            const key = process.env.SECRET_KEY as Secret
+            
+            const refreshtoken = sign({id:user.id,email:user.email},key,{expiresIn:'1d'})
 
-        if (!user) {
-            return response.status(400).json({ message: 'Usuário não encontrado' });
+            const acesssToken = sign({id:user.id,email:user.email},key,{expiresIn:'1h'})
+            
+            return response.status(200).json({ refresh:refreshtoken,access: acesssToken })
+
+        } catch (error) {
+                console.log(error)
+                return response.status(500).json({ message: 'Erro na geração do token' })
         }
-        const key = process.env.SECRET_KEY as Secret
-        const refreshtoken = sign({id:user.id,email:user.username},key,{expiresIn:'1d'})
-        const acesssToken = sign({id:user.id,email:user.username},key,{expiresIn:'1h'})
-
-        
-        return response.status(200).json({ refresh:refreshtoken,acess: acesssToken });
     }
 
     public async refresh( request:Request, response: Response ):Promise<Response> {
         
-        const {refresh} = request.body   
+        type Refresh = string | undefined
+
+        const refresh:Refresh = request.body 
         
-        if(refresh === '') {
+        if(refresh === '' || refresh === undefined) {
             return response.status(400).json({ message: 'Token não existente' });
         }
         
-        const key = process.env.SECRET_KEY as Secret;
+        const key = process.env.SECRET_KEY as Secret
 
-        let decodedtoken:any;
+        let decodedtoken:any
+
         try{
-            decodedtoken = verify(refresh,key);
+            decodedtoken = verify(refresh,key)
+            const {id,email} = decodedtoken as {id:number,email:string}
+            const token = sign({id:id,email:email},key,{expiresIn:'1d'})
+            return response.status(200).json({ access:token })
         } catch(error) {
             return response.status(400).json({ message: 'Token de acesso inválido!' });
         }
-        const {id,email} = decodedtoken as {id:number,email:string};
-        const token = sign({id:id,email:email},key,{expiresIn:'1d'});
-        return response.status(200).json({ access:token });
+
+        
     }
 }
 

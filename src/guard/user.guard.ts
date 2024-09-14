@@ -6,29 +6,39 @@ import { prisma } from "../database/prisma";
 export const vefiricar_token = async(request:Request,response:Response,next:NextFunction) =>{
     //console.log(request)
     if (request.headers.authorization && request.headers.authorization.startsWith('Bearer ')) {
+        
+        type Token = string | undefined
+
+        const token:Token = request.headers.authorization.split(' ')[1];
+        
+        if (token === '' || token === undefined) {
+            return response.status(401).json({ message: 'Token ausente' ,token:token});
+        }
+
         try{
-            const token = request.headers.authorization.split(' ')[1];
-            if(!token){
-                return response.status(401).json({ message: 'Token ausente' ,token:token});
-            }
+            
             const key = process.env.SECRET_KEY as Secret
+
             const decoded = verify(token,key)
+            
             const {id} = decoded as {id:number}
-        //request.user = await prisma.user.findUnique({
-        //    where: {
-        //        id: id
-        //    }
-        //})
-        //if(!request.user){
-        //    return response.status(401).json({ message: 'Token ausente' });
-        //}
-        return next()
+            const user = await prisma.user.findUnique({
+                where: {
+                    id: id
+                }
+            })
+
+            if(!user){
+                return response.status(401).json({ message: 'Token inválido' });
+            }
+        
+            return next()
         } catch(error) {
             return response.json({message: error})
         }
 
     } else {
-        return response.status(401).json({ message: 'Token token invalido' });
+        return response.status(401).json({ message: 'Token invalido' });
     }
 }
 
