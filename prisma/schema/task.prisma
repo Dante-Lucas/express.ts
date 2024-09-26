@@ -1,0 +1,10 @@
+model Task {
+  id      Int      @id @default(autoincrement())
+  title   String   @map("titulo")
+  content String?  @map("conteudo")
+  status  Boolean  @default(false)@map("status")
+  //user_id Int
+  //user    User?    @relation(fields: [user_id], references: [id])
+
+  @@map("Tarefa")
+}

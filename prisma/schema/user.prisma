@@ -1,0 +1,11 @@
+model User {
+    id               Int         @id @default(autoincrement())
+    username         String     @unique @map("nome_do_usuario")
+    email            String    @unique @map("email") 
+    password         String    @map("password")
+    dataNascimento   DateTime? @map("data_de_nascimento")
+    genero           String?   @map("genero")
+    telefone         String?   @map("telefone")
+    //tasks            Task[]   
+    @@map("Usuario")
+}
