@@ -4,7 +4,6 @@ import { Secret, verify } from "jsonwebtoken";
 import { prisma } from "../database/prisma";
 
 export const vefiricar_token = async(request:Request,response:Response,next:NextFunction) =>{
-    //console.log(request)
     if (request.headers.authorization && request.headers.authorization.startsWith('Bearer ')) {
         
         type Token = string | undefined

@@ -1,27 +1,28 @@
 import {  Request, Response, Router } from "express";
 import  userService  from "../../services/user/user.service";
 import { vefiricar_token } from "../../guard/user.guard";
+import { Iuser } from "../../interface/user/user.interface";
+import { Refresh } from "../../types/token";
 
 
 class UserController {
     
-    public router:Router 
+    private service: typeof userService 
     constructor() {
-        this.router = Router()
-        this.register(this.router)
-        this.login(this.router)
-        this.refresh(this.router)
-        
+     this.service = userService   
     }
 
-    private register = (router: Router): void => {
-        router.post('/register', userService.cadastro)
+    public register = (request:Request,response:Response) => {
+        const user:Iuser = request.body
+        return this.service.cadastro(user,response)
     }
-    private login = (router: Router): void => {
-        router.post('/login', userService.authentication)
+    public login = (request:Request,response:Response) => {
+        const user:Iuser = request.body
+        return this.service.authentication(user,response)
     }
-    private refresh = (router: Router): void => {
-        router.post('/refresh', userService.refresh)
+    public refresh = (request:Request,response:Response) => {
+        const refresh:Refresh = request.body 
+        return this.service.refresh(refresh,response)
     }
     
 

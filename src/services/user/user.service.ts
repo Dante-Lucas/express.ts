@@ -5,48 +5,46 @@ import { randomInt } from "crypto";
 import { passwordHash } from "../../utils/hash";
 import { prisma } from "../../database/prisma";
 import { Secret, sign, verify } from "jsonwebtoken";
+import { Refresh } from "../../types/token";
 
 
 class UserService {
 
     
-    public async cadastro(request: Request, response: Response):Promise<Response> {
+    public async cadastro(user: Iuser, response: Response):Promise<Response> {
         
-        const {username, email, password, confirmPassword}:Iuser = request.body
-        
-        if(!isValidCredencials(username,email)) {
+        if(!isValidCredencials(user.username,user.email)) {
             return response.status(400).json({ message: 'Campos inválidos' });
         }
-        if(!IsvalidPassword(password,confirmPassword)) {
+        if(!IsvalidPassword(user.password,user.confirmPassword)) {
             return response.status(400).json({ message: 'As senhas são inválidas' });
         }
         const salt:number = randomInt(10,16)
-        const senha = await passwordHash(password,salt)
-        console.log(senha)
+        const senha = await passwordHash(user.password,salt)
         
-        const user = await prisma.user.findUnique({
+        const userExiste = await prisma.user.findUnique({
             where: {
-                email: email,
+                email: user.email,
             }
         })
 
-        if (user?.email===email) {
+        if (userExiste?.email===user.email) {
             return response.status(400).json({ message: 'Usuário já existe' });
         } 
         
         
         const newuser:Iuser = await prisma.user.create({
             data: {
-                username: username,
-                email: email,
+                username: user.username,
+                email: user.email,
                 password: senha
             }
         })
         return response.status(201).json({user: newuser})
          
     }
-    public async authentication( request:Request, response: Response ):Promise<Response> {
-        const {username, password}:Iuser = request.body
+    public async authentication( {username,password}:Iuser , response: Response):Promise<Response> {
+        //const {username, password}:Iuser = request.body
 
         if(username === '' || password === '') {
             return response.status(400).json({ message: 'Todos os campos devem ser preenchidos!' });
@@ -75,11 +73,7 @@ class UserService {
         }
     }
 
-    public async refresh( request:Request, response: Response ):Promise<Response> {
-        
-        type Refresh = string | undefined
-
-        const refresh:Refresh = request.body 
+    public async refresh( refresh:Refresh, response: Response ):Promise<Response> {
         
         if(refresh === '' || refresh === undefined) {
             return response.status(400).json({ message: 'Token não existente' });

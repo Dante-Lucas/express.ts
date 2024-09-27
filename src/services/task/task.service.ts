@@ -7,7 +7,7 @@ import { isValidTask } from "../../utils/validator";
 
 class TaskService {
 
-    public getAll = async(request: Request, response: Response) => {
+    public getAll = async(response: Response) => {
         
         const tasks = await prisma.task.findMany()
 
